@@ -10,7 +10,7 @@ library(rstan)
 library(RColorBrewer)
 library(fields)
 setwd('~/workflow_stepps_prediction/')
-help.fun.loc <- 'utils/'
+help.fun.loc <- 'prediction/utils/'
 data.loc <- 'prediction/data/'
 plot.loc <- 'analysis/plots/'
 output.loc <- 'prediction/output/'
@@ -19,7 +19,7 @@ source(paste(help.fun.loc,'pred_helper_funs.r',sep=''))
 source(paste(help.fun.loc,'pred_plot_funs.r',sep=''))
 
 
-fit <- read_stan_csv(paste(output.loc,'prediction_nd_reduced_domain_holocene.csv',sep=''))
+fit <- read_stan_csv(paste(output.loc,'prediction_nd_reduced_domain_114_sites.csv',sep=''))
 saveRDS(fit,paste(data.loc,'fit_data.RDS',sep=''))
 fit <- readRDS(paste(data.loc,'fit_data.RDS',sep=''))
 post <- rstan::extract(fit, permuted=FALSE, inc_warmup=FALSE)
@@ -30,13 +30,13 @@ post_dat <- list(post = post,par_names = par_names)
 rm(post)
 saveRDS(post_dat,paste(data.loc,'post_data.RDS',sep=''))
 post_dat <- readRDS(paste(data.loc,'post_data.RDS',sep=''))
-r <- build_r_nb(post_dat=post_dat,N = 554,T=20,K=13)
+r <- build_r_nb(post_dat=post_dat,N = 554,T=19,K=13)
 rm(post_dat)
 saveRDS(r,paste(data.loc,'r_large.RDS',sep=''))
 r <- readRDS(paste(data.loc,'r_large.RDS',sep=''))
 
 
-load(paste(data.loc,'prediction_13_taxa_554_cells_83_knots_cal_pl_Ka_Kgamma_EPs_116_sites_full_pred_holocene.rdata',sep=''))
+load(paste(data.loc,'prediction_13_taxa_554_cells_83_knots_cal_pl_Ka_Kgamma_EPs_114_sites_full_pred.rdata',sep=''))
 taxa <- colnames(y)
 
 
@@ -71,7 +71,7 @@ hf_index <- which.min(paldist2(coord.agg.final,hf_us, dist.method = 'euclidean')
 
 ########################################################################################################################
 #look at beech for Harvard Forest 
-time_scale <-seq(500,10000,500) 
+time_scale <-seq(150,1950,100) 
 
 sapply(1:nrow(coord.agg.final),function(zz){
 
@@ -85,7 +85,7 @@ hf_site <-
 })
 
 #estimate quantiles for all sites
-pdf(paste(plot.loc,'holocene/grid_point',zz,'_holocene.pdf',sep=''),height=5,width = 15)
+pdf(paste(plot.loc,'two_millennia/grid_point',zz,'_two_millennia.pdf',sep=''),height=5,width = 15)
 #par(mfrow=c(1,2))
 layout(mat=matrix(ncol=3,c(1,1,2)))
 sapply(1:K,function(taxon){  
@@ -94,14 +94,14 @@ sapply(1:K,function(taxon){
   mean_hf <- colMeans(prediction)
 #matplot(time_scale,t(qt_hf),type='l',xlim=c(2000,0),ylim=c(0,1))
 
-  matplot(time_scale,t(qt_hf),type='n',xlim=c(10000,0),ylim=c(0,1),
+  matplot(time_scale,t(qt_hf),type='n',xlim=c(2000,0),ylim=c(0,1),
           main = ifelse(taxon==1,paste(taxa[taxon],coord.agg.final[hf_index,1],coord.agg.final[hf_index,2]),
-                        taxa[taxon]))
+          taxa[taxon]))
   polygon(c(time_scale,rev(time_scale)),c(qt_hf['2.5%',],rev(qt_hf['97.5%',])),col='gray')
   polygon(c(time_scale,rev(time_scale)),c(qt_hf['16%',],rev(qt_hf['83%',])),col='lightblue',border='lightblue')
   lines(time_scale,qt_hf['50%',],lwd=2)
   lines(time_scale,mean_hf,lwd=2,col=2)
-  abline(v = time_scale[time_scale%in%c(5000,500)],lty=2)
+  abline(v = time_scale[time_scale%in%c(1250,150)],lty=2)
   if(taxon == 1){
     legend('topleft',col=c(1,2,'lightblue','grey'),lwd = 2,
            legend = c('median','mean','16% - 83% quantile','2.5% - 97.5% quantile'))
@@ -109,13 +109,13 @@ sapply(1:K,function(taxon){
   
 
   #difference firs sample last sample
-  diff_sample <- prediction[,time_scale==500] - prediction[,time_scale==5000]
+  diff_sample <- prediction[,time_scale==150] - prediction[,time_scale==1250]
   quantile_change <- quantile(diff_sample,probs=c(0.025,0.16,0.5,0.83,0.975))
   #histogram of differences for individual runs
   hist(diff_sample,xlim=c(-1,1),
        main= ifelse(taxon==1,paste(paste(taxa[taxon], 'Pairwise differences'),
-                                   '5000 and 500 cal BP',sep='\n'),
-                                       taxa[taxon]))
+                                   '1250 and 150 cal BP',sep='\n'),
+                    taxa[taxon]))
   abline(v = quantile_change,lty=2,col=2:6,lwd=2)
   
   #probability of positive difference
